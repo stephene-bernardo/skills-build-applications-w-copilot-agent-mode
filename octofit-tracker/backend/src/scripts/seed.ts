@@ -50,9 +50,9 @@ async function seedDatabase(): Promise<void> {
     ])
 
     const team = await Team.findOneAndUpdate(
-      { name: 'Trail Blazers' },
+      { name: 'Trail Blazersss' },
       {
-        name: 'Trail Blazers',
+        name: 'Trail Blazersss',
         description: 'A friendly crew focused on running, riding, and recovery.',
         members: users.map((user) => user._id),
       },
