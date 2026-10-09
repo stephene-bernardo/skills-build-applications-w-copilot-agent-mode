@@ -16,63 +16,45 @@ async function seedDatabase(): Promise<void> {
   try {
     console.log('Connected to octofit_db')
 
-    const users = await Promise.all([
-      User.findOneAndUpdate(
-        { username: 'maya-chen' },
-        {
-          name: 'Maya Chen',
-          username: 'maya-chen',
-          email: 'maya.chen@example.com',
-          bio: 'Weekend runner and trail enthusiast.',
-        },
-        { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true },
-      ),
-      User.findOneAndUpdate(
-        { username: 'jordan-rivera' },
-        {
-          name: 'Jordan Rivera',
-          username: 'jordan-rivera',
-          email: 'jordan.rivera@example.com',
-          bio: 'Strength training and cycling.',
-        },
-        { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true },
-      ),
-      User.findOneAndUpdate(
-        { username: 'alex-kim' },
-        {
-          name: 'Alex Kim',
-          username: 'alex-kim',
-          email: 'alex.kim@example.com',
-          bio: 'Building consistency one workout at a time.',
-        },
-        { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true },
-      ),
-    ])
-
-    const team = await Team.findOneAndUpdate(
-      { name: 'Trail Blazersss' },
+    const usersToSeed = [
       {
-        name: 'Trail Blazersss',
-        description: 'A friendly crew focused on running, riding, and recovery.',
-        members: users.map((user) => user._id),
+        name: 'Maya Chen',
+        username: 'maya-chen',
+        email: 'maya.chen@example.com',
+        bio: 'Weekend runner and trail enthusiast.',
       },
-      { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true },
-    )
+      {
+        name: 'Jordan Rivera',
+        username: 'jordan-rivera',
+        email: 'jordan.rivera@example.com',
+        bio: 'Strength training and cycling.',
+      },
+      {
+        name: 'Alex Kim',
+        username: 'alex-kim',
+        email: 'alex.kim@example.com',
+        bio: 'Building consistency one workout at a time.',
+      },
+    ]
+    const usernames = usersToSeed.map(({ username }) => username)
+    const existingUsers = await User.find({ username: { $in: usernames } }).select('_id').lean()
 
-    const otherTeam = await Team.findOneAndUpdate(
-      { name: 'City Sprinters' },
+    const teamsToSeed = [
+      {
+        name: 'Trail Blazers',
+        description: 'A friendly crew focused on running, riding, and recovery.',
+        memberIndexes: [0, 1, 2],
+      },
       {
         name: 'City Sprinters',
         description: 'Short, energetic workouts around the neighborhood.',
-        members: [users[1]._id, users[2]._id],
+        memberIndexes: [1, 2],
       },
-      { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true },
-    )
-
-    const activities = [
+    ]
+    const activitiesToSeed = [
       {
-        user: users[0]._id,
-        team: team._id,
+        userIndex: 0,
+        teamIndex: 0,
         type: 'running',
         durationMinutes: 35,
         calories: 310,
@@ -80,8 +62,8 @@ async function seedDatabase(): Promise<void> {
         notes: 'Easy riverside run.',
       },
       {
-        user: users[1]._id,
-        team: team._id,
+        userIndex: 1,
+        teamIndex: 0,
         type: 'cycling',
         durationMinutes: 50,
         calories: 420,
@@ -89,8 +71,8 @@ async function seedDatabase(): Promise<void> {
         notes: 'Steady ride after work.',
       },
       {
-        user: users[2]._id,
-        team: otherTeam._id,
+        userIndex: 2,
+        teamIndex: 1,
         type: 'strength',
         durationMinutes: 40,
         calories: 260,
@@ -98,33 +80,13 @@ async function seedDatabase(): Promise<void> {
         notes: 'Full-body circuit.',
       },
     ]
-
-    await Promise.all(
-      activities.map(({ user, date, type, ...activity }) =>
-        Activity.findOneAndUpdate(
-          { user, date, type },
-          { user, date, type, ...activity },
-          { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true },
-        ),
-      ),
-    )
-
-    const leaderboardEntries = [
-      { user: users[0], team, points: 840, rank: 1 },
-      { user: users[1], team, points: 710, rank: 2 },
-      { user: users[2], team: otherTeam, points: 590, rank: 3 },
+    const leaderboardToSeed = [
+      { userIndex: 0, teamIndex: 0, points: 840, rank: 1 },
+      { userIndex: 1, teamIndex: 0, points: 710, rank: 2 },
+      { userIndex: 2, teamIndex: 1, points: 590, rank: 3 },
     ]
-    await Promise.all(
-      leaderboardEntries.map(({ user, team: entryTeam, points, rank }) =>
-        Leaderboard.findOneAndUpdate(
-          { user: user._id, period: '2026-W41' },
-          { user: user._id, team: entryTeam._id, points, rank, period: '2026-W41' },
-          { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true },
-        ),
-      ),
-    )
-
-    const workouts = [
+    const period = '2026-W41'
+    const workoutsToSeed = [
       {
         title: 'Beginner Tempo Run',
         description: 'A conversational warm-up followed by short controlled tempo intervals.',
@@ -151,15 +113,45 @@ async function seedDatabase(): Promise<void> {
       },
     ]
 
-    await Promise.all(
-      workouts.map(({ title, ...workout }) =>
-        Workout.findOneAndUpdate(
-          { title },
-          { title, ...workout },
-          { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true },
-        ),
-      ),
+    await Activity.deleteMany({
+      notes: { $in: activitiesToSeed.map(({ notes }) => notes) },
+    })
+    await Leaderboard.deleteMany({
+      user: { $in: existingUsers.map(({ _id }) => _id) },
+      period,
+    })
+    await Team.deleteMany({
+      name: { $in: [...teamsToSeed.map(({ name }) => name), 'Trail Blazersss'] },
+    })
+    await User.deleteMany({ username: { $in: usernames } })
+    await Workout.deleteMany({
+      title: { $in: workoutsToSeed.map(({ title }) => title) },
+    })
+
+    const users = await User.insertMany(usersToSeed)
+    const teams = await Team.insertMany(
+      teamsToSeed.map(({ name, description, memberIndexes }) => ({
+        name,
+        description,
+        members: memberIndexes.map((index) => users[index]._id),
+      })),
     )
+    await Activity.insertMany(
+      activitiesToSeed.map(({ userIndex, teamIndex, ...activity }) => ({
+        ...activity,
+        user: users[userIndex]._id,
+        team: teams[teamIndex]._id,
+      })),
+    )
+    await Leaderboard.insertMany(
+      leaderboardToSeed.map(({ userIndex, teamIndex, ...entry }) => ({
+        ...entry,
+        user: users[userIndex]._id,
+        team: teams[teamIndex]._id,
+        period,
+      })),
+    )
+    await Workout.insertMany(workoutsToSeed)
 
     console.log('Database seeding complete: users, teams, activities, leaderboard, and workouts.')
   } finally {
