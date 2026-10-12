@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
 import { fetchCollection } from '../api.js'
 
-export default function useApiCollection(endpoint) {
+export default function useApiCollection(endpoint, request = fetch) {
   const [state, setState] = useState({ endpoint, items: [], loading: true, error: '' })
 
   useEffect(() => {
     const controller = new AbortController()
 
-    fetchCollection(endpoint, controller.signal)
+    fetchCollection(endpoint, controller.signal, request)
       .then((items) => {
         if (!controller.signal.aborted) {
           setState({ endpoint, items, loading: false, error: '' })
@@ -25,7 +25,7 @@ export default function useApiCollection(endpoint) {
       })
 
     return () => controller.abort()
-  }, [endpoint])
+  }, [endpoint, request])
 
   return state.endpoint === endpoint
     ? state

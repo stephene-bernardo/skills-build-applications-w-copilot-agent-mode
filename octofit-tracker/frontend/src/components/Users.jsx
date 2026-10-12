@@ -6,7 +6,7 @@ function initials(name = '') {
 }
 
 export default function Users() {
-  const { items, loading, error } = useApiCollection('/api/users/')
+  const { items, loading, error } = useApiCollection('/api/users/', fetch)
 
   return (
     <section className="collection-page">

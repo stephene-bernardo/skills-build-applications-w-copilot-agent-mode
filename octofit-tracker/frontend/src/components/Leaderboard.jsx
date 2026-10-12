@@ -7,7 +7,7 @@ function displayName(value) {
 }
 
 export default function Leaderboard() {
-  const { items, loading, error } = useApiCollection('/api/leaderboard/')
+  const { items, loading, error } = useApiCollection('/api/leaderboard/', fetch)
 
   return (
     <section className="collection-page">

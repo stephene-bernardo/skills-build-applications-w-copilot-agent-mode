@@ -2,7 +2,7 @@ import CollectionState from './CollectionState.jsx'
 import useApiCollection from '../hooks/useApiCollection.js'
 
 export default function Workouts() {
-  const { items, loading, error } = useApiCollection('/api/workouts/')
+  const { items, loading, error } = useApiCollection('/api/workouts/', fetch)
 
   return (
     <section className="collection-page">

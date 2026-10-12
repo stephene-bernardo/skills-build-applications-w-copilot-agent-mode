@@ -14,7 +14,7 @@ function formatDate(value) {
 }
 
 export default function Activities() {
-  const { items, loading, error } = useApiCollection('/api/activities/')
+  const { items, loading, error } = useApiCollection('/api/activities/', fetch)
 
   return (
     <section className="collection-page">
