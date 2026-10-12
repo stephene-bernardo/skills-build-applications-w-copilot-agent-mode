@@ -18,7 +18,7 @@ async function seedDatabase(): Promise<void> {
 
     const usersToSeed = [
       {
-        name: 'Maya Chen',
+        name: 'Maya Chent',
         username: 'maya-chen',
         email: 'maya.chen@example.com',
         bio: 'Weekend runner and trail enthusiast.',
